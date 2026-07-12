@@ -12,7 +12,6 @@ Route::get('/dashboard', function () {
     return view('dashboard');
 })->middleware(['auth', 'verified'])->name('dashboard');
 
-// ESTA ES LA RUTA CRUCIAL: Asegúrate de que esté idéntica a esta línea
 Route::post('/clases', [ClaseController::class, 'store'])->name('clases.store')->middleware('auth');
 
 Route::middleware('auth')->group(function () {

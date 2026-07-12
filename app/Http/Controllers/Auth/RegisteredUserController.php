@@ -28,38 +28,38 @@ class RegisteredUserController extends Controller
      *
      * @throws ValidationException
      */
-   public function store(Request $request): RedirectResponse
-{
-    $request->validate([
-        'name' => ['required', 'string', 'max:255'],
-        'email' => ['required', 'string', 'lowercase', 'email', 'max:255', 'unique:'.User::class],
-        'password' => ['required', 'confirmed', Rules\Password::defaults()],
-        'role' => ['required', 'string'],
-    ]);
+    public function store(Request $request): RedirectResponse
+    {
+        $request->validate([
+            'name' => ['required', 'string', 'max:255'],
+            'email' => ['required', 'string', 'lowercase', 'email', 'max:255', 'unique:'.User::class],
+            'password' => ['required', 'confirmed', Rules\Password::defaults()],
+            'role' => ['required', 'string'],
+        ]);
 
-    // Forzamos a que guarde exactamente lo que viene del formulario
-    $role = $request->role; 
+        // Forzamos a que guarde exactamente lo que viene del formulario
+        $role = $request->role; 
 
-    // Si eligió maestro, validamos la licencia de forma estricta
-    if ($role === 'maestro') {
-        // Usamos trim() para quitar espacios vacíos por si acaso
-        if (trim($request->licencia) !== 'MAESTRO2024') {
-            // Si la licencia está mal, detenemos todo y mandamos el error a la pantalla
-            return back()->withErrors(['licencia' => 'El código de licencia es incorrecto.'])->withInput();
+        // Si eligió maestro, validamos la licencia de forma estricta
+        if ($role === 'maestro') {
+            // Usamos trim() para quitar espacios vacíos por si acaso
+            if (trim($request->licencia) !== 'MAESTRO2024') {
+                // Si la licencia está mal, detenemos todo y mandamos el error a la pantalla
+                return back()->withErrors(['licencia' => 'El código de licencia es incorrecto.'])->withInput();
+            }
         }
+
+        $user = User::create([
+            'name' => $request->name,
+            'email' => $request->email,
+            'password' => Hash::make($request->password),
+            'role' => $role, // Se guarda el rol seleccionado ('maestro' o 'alumno')
+        ]);
+
+        event(new Registered($user));
+
+        // Auth::login($user); 👈 SE DESACTIVA PARA QUE NO CIERRE LA SESIÓN DEL ADMIN
+
+        return redirect(route('dashboard', absolute: false))->with('success', '¡Usuario registrado exitosamente!');
     }
-
-    $user = User::create([
-        'name' => $request->name,
-        'email' => $request->email,
-        'password' => Hash::make($request->password),
-        'role' => $role, // Se guarda el rol seleccionado ('maestro' o 'alumno')
-    ]);
-
-    event(new Registered($user));
-
-    Auth::login($user);
-
-    return redirect(route('dashboard', absolute: false));
-}
 }
