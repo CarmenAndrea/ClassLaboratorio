@@ -26,4 +26,30 @@ class PasswordController extends Controller
 
         return back()->with('status', 'password-updated');
     }
+
+    /**
+     * Actualiza la contraseña de cualquier usuario desde el panel de Admin.
+     */
+    public function adminUpdate(\Illuminate\Http\Request $request): \Illuminate\Http\RedirectResponse
+    {
+        // 1. Validar los datos ingresados
+        $request->validate([
+            'email' => ['required', 'email', 'exists:users,email'],
+            'password' => ['required', 'confirmed', \Illuminate\Validation\Rules\Password::defaults()],
+        ], [
+            'email.exists' => 'No existe ningún usuario registrado con este correo.',
+            'password.confirmed' => 'La confirmación de la contraseña no coincide.',
+        ]);
+
+        // 2. Buscar al usuario por el correo del formulario
+        $user = \App\Models\User::where('email', $request->email)->first();
+
+        // 3. Actualizar su contraseña
+        $user->update([
+            'password' => \Illuminate\Support\Facades\Hash::make($request->password),
+        ]);
+
+        // 4. Regresar con un mensaje de éxito claro
+        return back()->with('status', 'password-updated');
+    }
 }
